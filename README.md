@@ -1,3 +1,4 @@
+[![en](https://img.shields.io/badge/lang-rus-red.svg)](https://github.com/Hazardooo/fast-mic-toggle/blob/master/README.ru.md)
 # Fast Mic Toggle
 
 ### A tool for automatically restoring malfunctioning microphones in Windows by quickly toggling audio devices.
