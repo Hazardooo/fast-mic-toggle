@@ -31,8 +31,7 @@ jobs:
         
     - name: Build 
       run: |
-        cd app/
-        pyinstaller main.py --name fast-mic-toggle --collect-all pyaudiodevice 
+        pyinstaller app/main.py --onefile --name fast-mic-toggle --collect-all pyaudiodevice 
 
     - name: Create ZIP archive
       run: |
