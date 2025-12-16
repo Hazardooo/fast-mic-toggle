@@ -4,8 +4,7 @@ app = Core()
 
 
 def show_menu():
-    print("""
---- fast-mic-toggle ---
+    print("""--- fast-mic-toggle ---
 1) Get a list of microphones
 2) Create a fast toggle
 3) Fast toggle
