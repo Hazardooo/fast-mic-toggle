@@ -3,61 +3,82 @@ from core import Core
 app = Core()
 
 
-def main():
-    print("\n--- fast-mic-toggle ---")
-
-    while True:
-        print("""
+def show_menu():
+    print("""
+--- fast-mic-toggle ---
 1) Get a list of microphones
 2) Create a fast toggle
 3) Fast toggle
 4) Delete config
-0) Exit""")
+0) Exit
+""")
 
-        user_input = input("\nSelect an option: ").strip()
+
+def get_mic_list():
+    mics = app.get_mic_list()
+    if not mics:
+        print("No microphones found.")
+    else:
+        for i, mic in enumerate(mics, start=1):
+            print(f"{i}: {mic}")
+
+
+def create_config():
+    while True:
+        raw_data = input("Specify the selected microphone indexes (e.g., '1 2') or 'b' to go back: ").strip()
+        if raw_data.lower() == 'b':
+            return
+
+        try:
+            default, temp = map(int, raw_data.split())
+            app.new_config(default, temp)
+            print("✅ Config created successfully!")
+            return
+        except ValueError:
+            print("❌ Error: You need to enter exactly 2 integers (e.g., '1 2').")
+
+
+def fast_toggle():
+    try:
+        app.mic_toggle()
+        print("✅ Microphone toggled successfully!")
+    except Exception as e:
+        print(f"❌ Error during toggle: {e}")
+
+
+def delete_config():
+    app.delete_config()
+    print("✅ Config deleted.")
+
+
+def main():
+    while True:
+        show_menu()
+        user_input = input("Select an option: ").strip()
 
         if not user_input:
             continue
 
         try:
-            answer = int(user_input)
-
-            match answer:
-                case 1:
-                    app.get_mic_list()
-
-                case 2:
-                    while True:
-                        try:
-                            raw_data = input("Specify the selected microphone indexes (e.g., '1 2') or 'b' to back: ")
-                            if raw_data.lower() == 'b':
-                                break
-
-                            default, temp = map(int, raw_data.split())
-                            app.new_config(default, temp)
-                            print("Config created successfully!")
-                            break
-                        except ValueError:
-                            print("Error: You need to enter exactly 2 integers (e.g., '1 2').")
-
-                case 3:
-                    app.mic_toggle()
-
-                case 4:
-                    app.delete_config()
-                    print("Config deleted.")
-
-                case 0:
-                    print("Exiting...")
-                    break
-
-                case _:
-                    print("Invalid option. Please choose between 0 and 4.")
-
+            option = int(user_input)
         except ValueError:
-            print("Error: Please enter a valid number.")
-        except Exception as e:
-            print(f"An unexpected error has occurred: {e}")
+            print("❌ Please enter a valid number.")
+            continue
+
+        match option:
+            case 1:
+                get_mic_list()
+            case 2:
+                create_config()
+            case 3:
+                fast_toggle()
+            case 4:
+                delete_config()
+            case 0:
+                print("Exiting... 👋")
+                break
+            case _:
+                print("❌ Invalid option. Please choose between 0 and 4.")
 
 
 if __name__ == "__main__":
