@@ -35,6 +35,7 @@ jobs:
 
     - name: Create ZIP archive
       run: |
+        ls
         ls app
         ls app/dist
         zip -r fast-mic-toggle.zip app/dist
