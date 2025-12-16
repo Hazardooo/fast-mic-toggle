@@ -35,6 +35,8 @@ jobs:
 
     - name: Create ZIP archive
       run: |
+        ls app
+        ls app/dist
         zip -r fast-mic-toggle.zip app/dist
 
     - name: Delete Release
