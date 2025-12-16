@@ -35,7 +35,7 @@ jobs:
 
     - name: Create ZIP archive
       run: |
-        zip -r fast-mic-toggle.zip app/dist/fast-mic-toggle
+        zip fast-mic-toggle.zip app/dist/fast-mic-toggle
 
     - name: Delete Release
       uses: cb80/delrel@latest
