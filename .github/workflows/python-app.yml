@@ -1,0 +1,78 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python application (Windows Build)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+
+    # 1. ИЗМЕНЕНИЕ: Используем раннер Windows
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    # Python 3.14 еще не выпущен. Я предполагаю, что вы имели в виду, например, 3.12, или 
+    # просто оставляю 3.14, но учтите, что он может не работать, пока не выйдет.
+    - name: Set up Python 3.14
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.14"
+        
+    - name: Install dependencies
+      # PowerShell (оболочка по умолчанию в Windows) корректно выполняет эти команды
+      run: |
+        python -m pip install --upgrade pip
+        if (Test-Path requirements.txt) { pip install -r requirements.txt }
+        pip install pyinstaller
+        
+    - name: Build  
+      run: |
+        # PyInstaller создаст файл fast-mic-toggle.exe в папке dist/
+        pyinstaller app/main.py --onefile --name fast-mic-toggle --collect-all pyaudiodevice
+
+    - name: Create ZIP archive
+      # 2. ИЗМЕНЕНИЕ: Используем PowerShell команду Compress-Archive
+      # Путь к собранному файлу в режиме --onefile будет: dist/fast-mic-toggle.exe
+      run: |
+        Compress-Archive -Path dist\fast-mic-toggle.exe -DestinationPath fast-mic-toggle.zip
+      shell: powershell
+      
+    # Поскольку вы используете --onefile, собранный файл - это dist/fast-mic-toggle.exe.
+    # Мы пакуем ТОЛЬКО этот EXE-файл.
+
+    - name: Delete Release
+      uses: cb80/delrel@latest
+      with:
+        tag: v1.0.0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.0
+        release_name: "Release v1.0.0 (Windows)"
+        draft: false
+        prerelease: false
+
+    - name: Upload to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: fast-mic-toggle.zip
+        asset_name: fast-mic-toggle-windows.zip # Переименовал, чтобы было понятно, что это Windows-версия
+        asset_content_type: application/zip
