@@ -33,4 +33,36 @@ jobs:
       run: |
         cd app/
         pyinstaller main.py --name fast-mic-toggle --collect-all pyaudiodevice 
-        ls    
+
+    - name: Create ZIP archive
+      run: |
+        cd app/dist
+        zip -r fast-mic-toggle.zip dist/fast-mic-toggle
+
+    - name: Delete Release
+      uses: cb80/delrel@latest
+      with:
+        tag: v1.0.0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.0
+        release_name: "Release v1.0.0"
+        draft: false
+        prerelease: false
+
+    - name: Upload to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: fast-mic-toggle.zip
+        asset_name: fast-mic-toggle.zip
+        asset_content_type: application/zip
+        
