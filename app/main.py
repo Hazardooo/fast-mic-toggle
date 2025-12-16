@@ -15,12 +15,8 @@ def show_menu():
 
 
 def get_mic_list():
-    mics = app.get_mic_list()
-    if not mics:
-        print("No microphones found.")
-    else:
-        for i, mic in enumerate(mics, start=1):
-            print(f"{i}: {mic}")
+    print("Your connected microphones:")
+    app.get_mic_list()
 
 
 def create_config():
