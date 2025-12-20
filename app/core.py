@@ -25,7 +25,7 @@ class Core:
     def mic_toggle(self):
         self.get_config()
         self.set_mic(self._temp["value"])
-        sleep(1)
+        sleep(5)
         self.set_mic(self._default["value"])
 
     def get_config(self):
