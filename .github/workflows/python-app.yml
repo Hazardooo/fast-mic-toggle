@@ -13,52 +13,39 @@ jobs:
   build:
 
     runs-on: windows-latest
+    env:
+      APP_NAME: "fast-mic-toggle"
+      PYTHON_VERSION: "3.14"
+      ICON_PATH: "app/src/icon.ico"
+      RELEASE_NAME: "Release v0.0.0"
+      DEPENDENCIES: "pyaudiodevice"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.14
-        uses: actions/setup-python@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+          pip install -r requirements.txt
           pip install pyinstaller
 
       - name: Build
         run: |
-          pyinstaller app/main.py --onefile --name fast-mic-toggle --collect-all pyaudiodevice
+          pyinstaller app/main.py --onefile --name "${{ env.APP_NAME }}" --icon "${{ env.ICON_PATH }}" --collect-all "${{ env.DEPENDENCIES }}"
 
-      - name: Create ZIP archive
-        run: |
-          Compress-Archive -Path dist\fast-mic-toggle.exe -DestinationPath fast-mic-toggle.zip
-        shell: powershell
-      - name: Delete Release
-        uses: cb80/delrel@latest
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
-          tag: v1.0.0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+          tag_name: v0.0.0
+          name: ${{ env.RELEASE_NAME }}
+          draft: true
+          files: dist/${{ env.APP_NAME }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v1.0.0
-          release_name: "Release v1.0.0 (Windows)"
-          draft: false
-          prerelease: false
-
-      - name: Upload to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: fast-mic-toggle.zip
-          asset_name: fast-mic-toggle-windows.zip
-          asset_content_type: application/zip
