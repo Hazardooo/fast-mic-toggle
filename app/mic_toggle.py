@@ -31,7 +31,7 @@ class MicToggleService:
         default_idx = int(self._default.value) if self._default.value else 0
         temp_idx = int(self._temp.value) if self._temp.value else 0
         cycle = 0
-        while not self._monitor._stop_event.is_set():
+        while not self._monitor.stop_event.is_set():
             cycle += 1
             print(f"\n--- Cycle {cycle} ---")
             print(f"➡️  TEMP (index: {temp_idx})...")

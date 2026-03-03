@@ -3,9 +3,9 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Generator
 
-from config import ConfigRepository, MicConfig
 from audio_device import AudioDeviceController
 from audio_monitor import AudioMonitor
+from config import ConfigRepository
 from mic_toggle import MicToggleService
 from system import SystemIntegration
 
@@ -34,7 +34,6 @@ class Core:
             if auto_close:
                 self._system.close_sound_settings()
 
-    # Остальные методы без изменений...
     def get_mic_list(self) -> dict:
         return self._devices.list_recording_devices()
 

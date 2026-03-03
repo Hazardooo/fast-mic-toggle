@@ -6,15 +6,15 @@ import sounddevice as sd
 
 
 class AudioMonitor:
-    __slots__ = ('_stop_event', '_detected_event', '_stream')
+    __slots__ = ('stop_event', '_detected_event', '_stream')
 
     def __init__(self):
-        self._stop_event: threading.Event = threading.Event()
+        self.stop_event: threading.Event = threading.Event()
         self._detected_event: threading.Event = threading.Event()
         self._stream: sd.InputStream | None = None
 
     def wait_for_signal(self, device_index: int, timeout: float, threshold: float) -> bool:
-        self._stop_event.clear()
+        self.stop_event.clear()
         self._detected_event.clear()
         self._stream = None
 
@@ -27,7 +27,7 @@ class AudioMonitor:
             volume = np.sqrt(np.mean(indata ** 2))
             if volume > threshold:
                 self._detected_event.set()
-                self._stop_event.set()
+                self.stop_event.set()
 
         try:
             self._stream = sd.InputStream(
@@ -40,7 +40,7 @@ class AudioMonitor:
             )
 
             with self._stream:
-                if self._stop_event.wait(timeout=timeout):
+                if self.stop_event.wait(timeout=timeout):
                     return self._detected_event.is_set()
                 return False
 
@@ -51,7 +51,7 @@ class AudioMonitor:
             self._stream = None
 
     def stop(self) -> None:
-        self._stop_event.set()
+        self.stop_event.set()
         if self._stream:
             try:
                 self._stream.stop()
