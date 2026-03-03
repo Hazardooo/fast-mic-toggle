@@ -1,43 +1,63 @@
-from time import sleep
+from __future__ import annotations
 
-from pyaudiodevice.audio_common import AudioCommon
-import winreg as reg
+from contextlib import contextmanager
+from typing import Generator
 
-root_key = reg.HKEY_CURRENT_USER
-sub_key_path = r"Software\fast-mic-toggle"
+from config import ConfigRepository, MicConfig
+from audio_device import AudioDeviceController
+from audio_monitor import AudioMonitor
+from mic_toggle import MicToggleService
+from system import SystemIntegration
 
 
 class Core:
+    __slots__ = ('_config', '_devices', '_monitor', '_toggle_service', '_system')
+
     def __init__(self):
-        self._common = AudioCommon()
-        self._default = {"name": "default_microphone", "value": None}
-        self._temp = {"name": "temporary_microphone", "value": None}
+        self._config: ConfigRepository = ConfigRepository()
+        self._devices: AudioDeviceController = AudioDeviceController()
+        self._monitor: AudioMonitor = AudioMonitor()
+        self._system: SystemIntegration = SystemIntegration()
 
-    def get_mic_list(self):
-        devices = self._common.get_audio_device_list()
-        for device in devices:
-            if devices[device]['Type'] == 'Recording':
-                print(devices[device])
+        self._toggle_service: MicToggleService = MicToggleService(
+            config_repo=self._config,
+            device_ctrl=self._devices,
+            monitor=self._monitor
+        )
 
-    def set_mic(self, mic_index):
-        self._common.set_default_communication_device_by_index(mic_index)
+    @contextmanager
+    def sound_session(self, auto_close: bool = True) -> Generator[None, None, None]:
+        self._system.open_sound_settings()
+        try:
+            yield
+        finally:
+            if auto_close:
+                self._system.close_sound_settings()
 
-    def mic_toggle(self):
-        self.get_config()
-        self.set_mic(self._temp["value"])
-        sleep(5)
-        self.set_mic(self._default["value"])
+    # Остальные методы без изменений...
+    def get_mic_list(self) -> dict:
+        return self._devices.list_recording_devices()
 
-    def get_config(self):
-        with reg.OpenKey(root_key, sub_key_path, 0, reg.KEY_READ) as key:
-            self._default["value"], _ = reg.QueryValueEx(key, self._default["name"])
-            self._temp["value"], _ = reg.QueryValueEx(key, self._temp["name"])
+    def set_mic(self, mic_index: int) -> None:
+        self._devices.set_default_communication_device(mic_index)
 
-    def new_config(self, default, temp):
-        with reg.CreateKeyEx(root_key, sub_key_path, 0, reg.KEY_WRITE) as key:
-            print(f"Registry key '{sub_key_path}' created or opened successfully.")
-            reg.SetValueEx(key, self._default["name"], 0, reg.REG_SZ, str(default))
-            reg.SetValueEx(key, self._temp["name"], 0, reg.REG_SZ, str(temp))
+    def mic_toggle(self, timeout: float = 5.0, threshold: float = 0.01) -> bool:
+        return self._toggle_service.toggle_until_signal(timeout, threshold)
 
-    def delete_config(self):
-        reg.DeleteKey(root_key, sub_key_path)
+    def stop_toggle(self) -> None:
+        self._toggle_service.stop()
+
+    def get_config(self) -> None:
+        self._toggle_service.load_config()
+
+    def new_config(self, default: int, temp: int) -> None:
+        self._config.save(default, temp)
+
+    def delete_config(self) -> None:
+        self._config.delete()
+
+    def open_sound_settings(self) -> None:
+        self._system.open_sound_settings()
+
+    def close_sound_settings(self) -> None:
+        self._system.close_sound_settings()
