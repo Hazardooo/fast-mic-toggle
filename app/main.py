@@ -1,11 +1,12 @@
 from core import Core
 import argparse
 import sys
+from time import sleep
 
 app = Core()
 
 
-def handle_create_config(default_index: int, temp_index: int):
+def handle_create_config(default_index: int, temp_index: int) -> None:
     try:
         app.new_config(default_index, temp_index)
         print("✅ Config created successfully!")
@@ -13,103 +14,89 @@ def handle_create_config(default_index: int, temp_index: int):
         print(f"❌ Error creating config: {e}")
 
 
-def create_config():
+def create_config() -> None:
     while True:
-        raw_data = input("Specify the selected microphone indexes (e.g., '1 2') or 'b' to go back: ").strip()
+        raw_data = input("Specify mic indexes (e.g., '1 2') or 'b' to go back: ").strip()
         if raw_data.lower() == 'b':
             return
 
         try:
             default, temp = map(int, raw_data.split())
-
             handle_create_config(default, temp)
             return
         except ValueError:
-            print("❌ Error: You need to enter exactly 2 integers (e.g., '1 2').")
+            print("❌ Error: Enter exactly 2 integers (e.g., '1 2').")
 
 
-def show_menu():
+def show_menu() -> None:
     print("""--- fast-mic-toggle ---
-1) Get a list of microphones
-2) Create a fast toggle
-3) Fast toggle
+1) List microphones
+2) Create toggle config
+3) Fast toggle (opens Sound Settings)
 4) Delete config
 0) Exit
 """)
 
 
-def get_mic_list():
-    print("Your connected microphones:")
+def get_mic_list() -> None:
+    print("Connected microphones:")
     app.get_mic_list()
 
 
-def fast_toggle():
+def fast_toggle() -> None:
     try:
-        app.mic_toggle()
-        print("✅ Microphone toggled successfully!")
+        with app.sound_session(auto_close=True):
+            detected = app.mic_toggle()
+            status = "with audio detection" if detected else "stopped"
+            print(f"✅ Toggled successfully ({status})!")
     except Exception as e:
         print(f"❌ Error during toggle: {e}")
 
 
-def delete_config():
+def delete_config() -> None:
     app.delete_config()
     print("✅ Config deleted.")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description="fast-mic-toggle: quick microphone switching. "
-                    "Use without arguments to start the interactive menu."
+        description="fast-mic-toggle: quick microphone switching."
     )
-
-    parser.add_argument(
-        'option',
-        nargs='?',
-        type=int,
-        help='Select an option (1-4). Option 2 requires two additional arguments.'
-    )
-
-    parser.add_argument(
-        'args',
-        nargs='*',
-        type=int,
-        help='Additional numeric arguments (e.g., microphone indices for Option 2).'
-    )
+    parser.add_argument('option', nargs='?', type=int, help='Option 1-4')
+    parser.add_argument('args', nargs='*', type=int, help='Additional args')
 
     if len(sys.argv) > 1:
         args = parser.parse_args()
 
         if args.option is None:
-            print("❌ Specify the option number (1, 2, 3, or 4).")
             parser.print_help()
             return
 
-        option = args.option
-
-        print(f"--- Executing option {option} ---")
-
-        match option:
+        match args.option:
             case 1:
                 get_mic_list()
             case 2:
                 if len(args.args) == 2:
-                    default, temp = args.args[0], args.args[1]
-                    handle_create_config(default, temp)
+                    handle_create_config(args.args[0], args.args[1])
                 else:
-                    print(
-                        "❌ Option 2 (Create config) requires exactly 2 numeric arguments (Default Index, Temp Index).")
+                    print("❌ Option 2 requires 2 arguments: default_index temp_index")
             case 3:
-                fast_toggle()
+                app.open_sound_settings()
+                sleep(0.5)
+                try:
+                    detected = app.mic_toggle()
+                    print(f"✅ Done! Audio detected: {detected}")
+                except Exception as e:
+                    print(f"❌ Error: {e}")
             case 4:
                 delete_config()
             case _:
-                print("❌ Invalid option. Choose between 1 and 4.")
-
+                print("❌ Invalid option. Use 1-4.")
         return
 
     while True:
         show_menu()
-        user_input = input("Select an option: ").strip()
+        user_input = input("Select option: ").strip()
 
         if not user_input:
             continue
@@ -117,7 +104,7 @@ def main():
         try:
             option = int(user_input)
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("❌ Enter a valid number.")
             continue
 
         match option:
@@ -133,7 +120,7 @@ def main():
                 print("Exiting... 👋")
                 break
             case _:
-                print("❌ Invalid option. Please choose between 0 and 4.")
+                print("❌ Invalid option. Use 0-4.")
 
 
 if __name__ == "__main__":
