@@ -36,7 +36,7 @@ class MicToggleService:
             print(f"\n--- Cycle {cycle} ---")
             print(f"➡️  TEMP (index: {temp_idx})...")
             self._device_ctrl.set_default_communication_device(temp_idx)
-            sleep(0.1)
+            sleep(1)
             print(f"➡️  DEFAULT (index: {default_idx})...")
             self._device_ctrl.set_default_communication_device(default_idx)
             sleep(0.1)
